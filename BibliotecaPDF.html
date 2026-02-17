@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minha Biblioteca PDF</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f0f13;
+            --surface: #1a1a22;
+            --card: #22222e;
+            --accent: #e8b86d;
+            --accent2: #c97b4b;
+            --text: #f0ece4;
+            --muted: #8a8a9a;
+            --page-shadow: rgba(0,0,0,0.7);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            color: var(--text);
+            padding: 30px 20px;
+        }
+
+        /* === HEADER === */
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.8em;
+            color: var(--accent);
+            letter-spacing: 1px;
+            text-shadow: 0 2px 20px rgba(232,184,109,0.3);
+        }
+        header p { color: var(--muted); margin-top: 6px; font-size: 1em; }
+
+        /* === UPLOAD SECTION === */
+        .upload-section {
+            background: var(--surface);
+            border: 1px solid rgba(232,184,109,0.15);
+            padding: 28px;
+            border-radius: 16px;
+            margin-bottom: 28px;
+            text-align: center;
+        }
+        .upload-section h2 { color: var(--text); font-weight: 500; margin-bottom: 16px; font-size: 1.1em; }
+        .upload-btn {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: #1a1008;
+            padding: 13px 36px;
+            border: none;
+            border-radius: 30px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            transition: all 0.3s;
+            box-shadow: 0 4px 20px rgba(232,184,109,0.3);
+        }
+        .upload-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(232,184,109,0.5); }
+        #fileInput { display: none; }
+
+        /* === STATS === */
+        .stats {
+            background: var(--surface);
+            border: 1px solid rgba(232,184,109,0.1);
+            padding: 18px 28px;
+            border-radius: 14px;
+            margin-bottom: 28px;
+        }
+        .stats-content { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 14px; }
+        .stat-item { text-align: center; }
+        .stat-number { font-family: 'Playfair Display', serif; font-size: 2.2em; color: var(--accent); }
+        .stat-label { color: var(--muted); font-size: 0.85em; margin-top: 3px; }
+
+        /* === LIBRARY GRID === */
+        .library {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 22px;
+            margin-bottom: 30px;
+        }
+
+        .book-card {
+            background: var(--card);
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.06);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+        .book-card:hover { transform: translateY(-6px); box-shadow: 0 14px 40px rgba(0,0,0,0.5); }
+
+        .book-cover {
+            width: 100%; height: 160px;
+            background: linear-gradient(145deg, #2a1f3d 0%, #1a3040 50%, #2a1520 100%);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 3.5em;
+            position: relative;
+            overflow: hidden;
+        }
+        .book-cover::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: repeating-linear-gradient(
+                90deg, transparent, transparent 12px,
+                rgba(255,255,255,0.02) 12px, rgba(255,255,255,0.02) 13px
+            );
+        }
+        .book-spine {
+            position: absolute; left: 0; top: 0; bottom: 0; width: 10px;
+            background: linear-gradient(180deg, var(--accent), var(--accent2));
+            border-radius: 2px 0 0 2px;
+        }
+
+        .book-body { padding: 16px; }
+        .book-title { font-weight: 600; color: var(--text); margin-bottom: 8px; word-break: break-word; line-height: 1.3; }
+        .book-info { font-size: 0.82em; color: var(--muted); line-height: 1.8; margin-bottom: 14px; }
+        .book-actions { display: flex; gap: 8px; }
+        .btn {
+            flex: 1; padding: 9px; border: none; border-radius: 8px;
+            cursor: pointer; font-size: 0.88em; font-family: 'DM Sans', sans-serif;
+            font-weight: 500; transition: all 0.2s;
+        }
+        .btn-read { background: var(--accent); color: #1a1008; }
+        .btn-read:hover { background: #f5ca87; }
+        .btn-delete { background: rgba(220, 80, 80, 0.15); color: #e05050; border: 1px solid rgba(220,80,80,0.3); }
+        .btn-delete:hover { background: rgba(220,80,80,0.3); }
+
+        /* === EMPTY STATE === */
+        .empty-state {
+            text-align: center; padding: 70px 20px;
+            background: var(--surface); border-radius: 16px;
+            border: 1px dashed rgba(232,184,109,0.2);
+        }
+        .empty-state h2 { font-family: 'Playfair Display', serif; color: var(--accent); margin-bottom: 12px; }
+        .empty-state p { color: var(--muted); }
+
+        /* === FLOATING IMPORT BUTTON === */
+        .import-btn {
+            position: fixed; bottom: 30px; right: 30px;
+            width: 64px; height: 64px;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            border: none; border-radius: 50%;
+            box-shadow: 0 6px 24px rgba(232,184,109,0.5);
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: all 0.3s; z-index: 500;
+            animation: pulse 2.5s infinite;
+        }
+        .import-btn:hover { transform: scale(1.12) rotate(5deg); }
+        .import-btn svg { width: 32px; height: 32px; }
+        .import-btn::before {
+            content: 'Importar PDFs';
+            position: absolute; right: 74px;
+            background: rgba(15,15,19,0.95); color: var(--text);
+            padding: 7px 14px; border-radius: 8px; white-space: nowrap;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+            font-size: 0.85em; font-family: 'DM Sans', sans-serif;
+            border: 1px solid rgba(232,184,109,0.2);
+        }
+        .import-btn:hover::before { opacity: 1; }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 6px 24px rgba(232,184,109,0.5); }
+            50% { box-shadow: 0 6px 36px rgba(232,184,109,0.8); }
+        }
+
+        /* ============================================
+           LEITOR PDF COM VIRADA DE PÁGINA
+        ============================================ */
+        .reader-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.97);
+            z-index: 2000;
+            flex-direction: column;
+        }
+        .reader-overlay.open { display: flex; }
+
+        /* Header do leitor */
+        .reader-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 24px;
+            background: var(--surface);
+            border-bottom: 1px solid rgba(232,184,109,0.15);
+            flex-shrink: 0;
+        }
+        .reader-title {
+            font-family: 'Playfair Display', serif;
+            color: var(--accent); font-size: 1.1em;
+            max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .reader-close {
+            background: rgba(220,80,80,0.15); color: #e05050;
+            border: 1px solid rgba(220,80,80,0.3); padding: 8px 20px;
+            border-radius: 8px; cursor: pointer; font-family: 'DM Sans', sans-serif;
+            font-size: 0.9em; transition: all 0.2s;
+        }
+        .reader-close:hover { background: rgba(220,80,80,0.35); }
+
+        /* Área principal do viewer */
+        .reader-body {
+            flex: 1; display: flex; align-items: center; justify-content: center;
+            position: relative; overflow: hidden;
+            padding: 20px;
+        }
+
+        /* Stage — onde a mágica acontece */
+        .page-stage {
+            position: relative;
+            display: flex; align-items: center; justify-content: center;
+            width: 100%; height: 100%;
+        }
+
+        /* Container da página com perspectiva 3D */
+        .page-container {
+            position: relative;
+            perspective: 1400px;
+            display: flex; align-items: center; justify-content: center;
+            max-width: 760px; width: 100%;
+        }
+
+        /* Página Canvas */
+        .page-wrap {
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: transform;
+        }
+
+        /* Animações de virada */
+        .page-wrap.flip-next {
+            animation: flipToNext 0.65s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        .page-wrap.flip-prev {
+            animation: flipToPrev 0.65s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes flipToNext {
+            0%   { transform: rotateY(0deg) scaleX(1); }
+            30%  { transform: rotateY(-25deg) scaleX(0.97); box-shadow: -20px 0 40px rgba(0,0,0,0.6); }
+            60%  { transform: rotateY(-60deg) scaleX(0.94); }
+            80%  { transform: rotateY(-90deg) scaleX(0.9); opacity: 0.3; }
+            100% { transform: rotateY(0deg) scaleX(1); opacity: 1; }
+        }
+
+        @keyframes flipToPrev {
+            0%   { transform: rotateY(0deg) scaleX(1); }
+            30%  { transform: rotateY(25deg) scaleX(0.97); box-shadow: 20px 0 40px rgba(0,0,0,0.6); }
+            60%  { transform: rotateY(60deg) scaleX(0.94); }
+            80%  { transform: rotateY(90deg) scaleX(0.9); opacity: 0.3; }
+            100% { transform: rotateY(0deg) scaleX(1); opacity: 1; }
+        }
+
+        #pdfCanvas {
+            display: block;
+            max-width: 100%;
+            max-height: calc(100vh - 170px);
+            border-radius: 4px;
+            box-shadow: 0 10px 60px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.5);
+        }
+
+        /* Brilho de dobra de página */
+        .page-glare {
+            position: absolute; top: 0; right: 0; bottom: 0; width: 40px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04));
+            pointer-events: none; border-radius: 0 4px 4px 0;
+        }
+        .page-corner {
+            position: absolute; bottom: 6px; right: 6px;
+            width: 20px; height: 20px;
+            background: linear-gradient(135deg, transparent 50%, rgba(200,160,80,0.3) 50%);
+            pointer-events: none;
+        }
+
+        /* Sombra lateral (simulando próxima página) */
+        .page-shadow-left, .page-shadow-right {
+            position: absolute; top: 10px; bottom: 10px; width: 6px;
+            background: linear-gradient(90deg, rgba(0,0,0,0.6), transparent);
+            pointer-events: none; z-index: 1; border-radius: 2px;
+        }
+        .page-shadow-left { left: -6px; }
+        .page-shadow-right { right: -6px; background: linear-gradient(270deg, rgba(0,0,0,0.6), transparent); }
+
+        /* Botões de navegação laterais */
+        .nav-btn {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            width: 52px; height: 52px;
+            background: rgba(232,184,109,0.12);
+            border: 1px solid rgba(232,184,109,0.3);
+            border-radius: 50%; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.25s; z-index: 10; color: var(--accent);
+            font-size: 1.4em;
+        }
+        .nav-btn:hover { background: rgba(232,184,109,0.3); transform: translateY(-50%) scale(1.1); }
+        .nav-btn:disabled { opacity: 0.2; cursor: not-allowed; }
+        .nav-btn:disabled:hover { background: rgba(232,184,109,0.12); transform: translateY(-50%) scale(1); }
+        .nav-prev { left: 0; }
+        .nav-next { right: 0; }
+
+        /* Footer: controles de página */
+        .reader-footer {
+            background: var(--surface);
+            border-top: 1px solid rgba(232,184,109,0.12);
+            padding: 14px 24px;
+            display: flex; align-items: center; justify-content: center;
+            gap: 20px; flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+
+        .page-controls {
+            display: flex; align-items: center; gap: 14px;
+        }
+        .ctrl-btn {
+            background: rgba(232,184,109,0.1); border: 1px solid rgba(232,184,109,0.25);
+            color: var(--accent); width: 38px; height: 38px;
+            border-radius: 8px; cursor: pointer; font-size: 1em;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s; font-family: 'DM Sans', sans-serif;
+        }
+        .ctrl-btn:hover:not(:disabled) { background: rgba(232,184,109,0.25); }
+        .ctrl-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+
+        .page-indicator {
+            display: flex; align-items: center; gap: 10px;
+        }
+        .page-input {
+            background: rgba(255,255,255,0.07); border: 1px solid rgba(232,184,109,0.25);
+            color: var(--accent); text-align: center;
+            width: 56px; height: 36px; border-radius: 8px;
+            font-family: 'Playfair Display', serif; font-size: 1em;
+            outline: none; transition: border 0.2s;
+        }
+        .page-input:focus { border-color: var(--accent); }
+        .page-total { color: var(--muted); font-size: 0.9em; white-space: nowrap; }
+
+        /* Progress bar */
+        .reading-progress {
+            height: 3px; background: rgba(255,255,255,0.06);
+            position: relative; overflow: hidden; flex-shrink: 0;
+        }
+        .reading-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent2), var(--accent));
+            transition: width 0.5s ease;
+            border-radius: 0 2px 2px 0;
+        }
+
+        /* Loading overlay */
+        .page-loading {
+            position: absolute; inset: 0;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 14px; z-index: 5; pointer-events: none;
+        }
+        .page-loading.hidden { display: none; }
+        .loader-ring {
+            width: 46px; height: 46px;
+            border: 3px solid rgba(232,184,109,0.15);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.85s linear infinite;
+        }
+        .loader-text { color: var(--muted); font-size: 0.85em; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Zoom controls */
+        .zoom-controls {
+            display: flex; align-items: center; gap: 8px;
+        }
+        .zoom-label { color: var(--muted); font-size: 0.82em; min-width: 42px; text-align: center; }
+
+        /* Toast notification */
+        .toast {
+            position: fixed; top: 24px; left: 50%; transform: translateX(-50%) translateY(-80px);
+            background: var(--surface); border: 1px solid rgba(232,184,109,0.3);
+            color: var(--text); padding: 12px 24px;
+            border-radius: 10px; font-size: 0.9em;
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 9999; pointer-events: none;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+
+        /* Keyboard hint */
+        .keyboard-hint {
+            color: var(--muted); font-size: 0.75em; text-align: center;
+        }
+        .kbd {
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 4px; padding: 1px 6px; font-size: 0.85em;
+        }
+
+        /* Swipe indicator (mobile) */
+        .swipe-hint {
+            display: none;
+            position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+            color: rgba(232,184,109,0.5); font-size: 0.75em; gap: 6px;
+            align-items: center;
+        }
+
+        @media (max-width: 768px) {
+            .library { grid-template-columns: 1fr 1fr; }
+            header h1 { font-size: 1.9em; }
+            .nav-btn { width: 40px; height: 40px; font-size: 1.1em; }
+            .reader-footer { padding: 10px 14px; gap: 12px; }
+            .swipe-hint { display: flex; }
+            .keyboard-hint { display: none; }
+            .import-btn { bottom: 20px; right: 20px; width: 56px; height: 56px; }
+            .import-btn::before { display: none; }
+        }
+
+        @media (max-width: 480px) {
+            .library { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container" style="max-width:1200px;margin:0 auto;">
+    <header>
+        <h1>📚 Minha Biblioteca PDF</h1>
+        <p>Organize e leia seus PDFs favoritos</p>
+    </header>
+
+    <div class="upload-section">
+        <h2>Adicionar PDFs à Biblioteca</h2>
+        <input type="file" id="fileInput" accept="application/pdf" multiple>
+        <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+            📁 Selecionar PDFs
+        </button>
+    </div>
+
+    <div class="stats">
+        <div class="stats-content">
+            <div class="stat-item">
+                <div class="stat-number" id="totalBooks">0</div>
+                <div class="stat-label">Livros na Biblioteca</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="totalPages">0</div>
+                <div class="stat-label">Total de Páginas</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="library" id="library"></div>
+
+    <div class="empty-state" id="emptyState">
+        <h2>📖 Sua biblioteca está vazia</h2>
+        <p>Adicione alguns PDFs para começar a ler!</p>
+    </div>
+</div>
+
+<!-- Botão flutuante -->
+<button class="import-btn" onclick="importAllPDFs()" title="Importar PDFs">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#1a1008" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2v10M8 8l4 4 4-4M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
+    </svg>
+</button>
+
+<!-- ============ LEITOR PDF ============ -->
+<div class="reader-overlay" id="readerOverlay">
+
+    <!-- Header -->
+    <div class="reader-header">
+        <div class="reader-title" id="readerTitle">Leitor PDF</div>
+        <button class="reader-close" onclick="closeReader()">✕ Fechar</button>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="reading-progress">
+        <div class="reading-progress-bar" id="progressBar" style="width:0%"></div>
+    </div>
+
+    <!-- Área de leitura -->
+    <div class="reader-body">
+        <!-- Botão anterior (lateral esquerda) -->
+        <button class="nav-btn nav-prev" id="navPrev" onclick="changePage(-1)" title="Página anterior">‹</button>
+
+        <!-- Stage da página -->
+        <div class="page-stage">
+            <div class="page-container">
+                <div class="page-wrap" id="pageWrap">
+                    <canvas id="pdfCanvas"></canvas>
+                    <div class="page-glare"></div>
+                    <div class="page-corner"></div>
+                    <div class="page-shadow-left"></div>
+                    <div class="page-shadow-right"></div>
+                </div>
+
+                <!-- Loading -->
+                <div class="page-loading" id="pageLoading">
+                    <div class="loader-ring"></div>
+                    <div class="loader-text">Carregando página...</div>
+                </div>
+            </div>
+
+            <!-- Swipe hint mobile -->
+            <div class="swipe-hint">← deslize para navegar →</div>
+        </div>
+
+        <!-- Botão próximo (lateral direita) -->
+        <button class="nav-btn nav-next" id="navNext" onclick="changePage(1)" title="Próxima página">›</button>
+    </div>
+
+    <!-- Footer com controles -->
+    <div class="reader-footer">
+        <div class="page-controls">
+            <button class="ctrl-btn" id="btnFirst" onclick="goToPage(1)" title="Primeira página">⟪</button>
+            <button class="ctrl-btn" id="btnPrev" onclick="changePage(-1)" title="Anterior">‹</button>
+
+            <div class="page-indicator">
+                <input type="number" class="page-input" id="pageInput"
+                       min="1" value="1"
+                       onchange="goToPage(parseInt(this.value))"
+                       onkeydown="if(event.key==='Enter') goToPage(parseInt(this.value))">
+                <span class="page-total">/ <span id="totalPagesDisplay">—</span></span>
+            </div>
+
+            <button class="ctrl-btn" id="btnNext" onclick="changePage(1)" title="Próxima">›</button>
+            <button class="ctrl-btn" id="btnLast" onclick="goToPage(totalPages)" title="Última página">⟫</button>
+        </div>
+
+        <div class="zoom-controls">
+            <button class="ctrl-btn" onclick="changeZoom(-0.15)" title="Diminuir zoom">−</button>
+            <span class="zoom-label" id="zoomLabel">100%</span>
+            <button class="ctrl-btn" onclick="changeZoom(0.15)" title="Aumentar zoom">+</button>
+            <button class="ctrl-btn" onclick="resetZoom()" title="Zoom original" style="font-size:0.7em;width:46px;">Reset</button>
+        </div>
+
+        <div class="keyboard-hint">
+            <span class="kbd">←</span> <span class="kbd">→</span> navegar &nbsp;|&nbsp;
+            <span class="kbd">Esc</span> fechar
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ─── Estado Global ───────────────────────────────────────────────
+let books = JSON.parse(localStorage.getItem('pdfBooks_v2')) || [];
+let pdfDoc = null;
+let currentPage = 1;
+let totalPages = 0;
+let zoomScale = 1.0;
+let isAnimating = false;
+let currentBookId = null;
+
+// ─── Init ─────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    renderLibrary();
+    updateStats();
+});
+
+// ─── Upload ───────────────────────────────────────────────────────
+document.getElementById('fileInput').addEventListener('change', async function(e) {
+    for (let file of Array.from(e.target.files)) {
+        if (file.type === 'application/pdf') await processFile(file);
+    }
+    e.target.value = '';
+});
+
+async function processFile(file) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            let pageCount = 0;
+            try {
+                const pdf = await pdfjsLib.getDocument({ data: event.target.result }).promise;
+                pageCount = pdf.numPages;
+            } catch(e) {}
+
+            // Gera cor de capa baseada no nome
+            const colors = [
+                ['#2a1f3d','#1a3040'], ['#1a2a1f','#2a1520'],
+                ['#3d2a1f','#1f1a3d'], ['#1f3d2a','#3d1f2a'],
+                ['#2a2a3d','#3d2a1a'], ['#1a1f3d','#3d1a20']
+            ];
+            const ci = Math.floor(Math.random() * colors.length);
+
+            books.push({
+                id: Date.now() + Math.random(),
+                title: file.name.replace('.pdf', ''),
+                fileName: file.name,
+                size: formatFileSize(file.size),
+                pages: pageCount,
+                addedDate: new Date().toLocaleDateString('pt-BR'),
+                data: event.target.result,
+                coverColors: colors[ci],
+                lastPage: 1
+            });
+
+            saveBooks();
+            renderLibrary();
+            updateStats();
+            resolve();
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+async function importAllPDFs() {
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = 'application/pdf'; input.multiple = true;
+    input.onchange = async (e) => {
+        const files = Array.from(e.target.files);
+        if (!files.length) return;
+
+        const btn = document.querySelector('.import-btn');
+        btn.style.pointerEvents = 'none';
+        btn.innerHTML = '<div style="color:#1a1008;font-size:10px;font-weight:600;">...</div>';
+
+        let count = 0;
+        for (let file of files) {
+            if (file.type === 'application/pdf') { await processFile(file); count++; }
+        }
+
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="#1a1008" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v10M8 8l4 4 4-4M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>`;
+        btn.style.pointerEvents = 'auto';
+        showToast(count > 0 ? `✅ ${count} PDF(s) importado(s)!` : '❌ Nenhum PDF importado');
+    };
+    input.click();
+}
+
+// ─── Biblioteca ───────────────────────────────────────────────────
+function renderLibrary() {
+    const lib = document.getElementById('library');
+    const empty = document.getElementById('emptyState');
+
+    if (!books.length) { lib.style.display = 'none'; empty.style.display = 'block'; return; }
+    lib.style.display = 'grid'; empty.style.display = 'none';
+
+    lib.innerHTML = books.map(b => `
+        <div class="book-card" onclick="openReaderForBook('${b.id}')">
+            <div class="book-cover" style="background:linear-gradient(145deg,${b.coverColors ? b.coverColors[0] : '#2a1f3d'} 0%,${b.coverColors ? b.coverColors[1] : '#1a3040'} 100%)">
+                <div class="book-spine"></div>
+                📄
+            </div>
+            <div class="book-body">
+                <div class="book-title">${b.title}</div>
+                <div class="book-info">
+                    📄 ${b.pages || '?'} páginas &nbsp;|&nbsp; 💾 ${b.size}<br>
+                    📅 ${b.addedDate}
+                    ${b.lastPage > 1 ? `<br>🔖 Lendo página ${b.lastPage}` : ''}
+                </div>
+                <div class="book-actions">
+                    <button class="btn btn-read" onclick="event.stopPropagation();openReader('${b.id}')">📖 Ler</button>
+                    <button class="btn btn-delete" onclick="event.stopPropagation();deleteBook('${b.id}')">🗑️ Excluir</button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function updateStats() {
+    document.getElementById('totalBooks').textContent = books.length;
+    document.getElementById('totalPages').textContent =
+        books.reduce((s, b) => s + (b.pages || 0), 0);
+}
+
+function saveBooks() { localStorage.setItem('pdfBooks_v2', JSON.stringify(books)); }
+
+// ─── Abre leitor ao clicar no card ────────────────────────────────
+function openReaderForBook(id) { openReader(id); }
+
+// ─── Leitor ───────────────────────────────────────────────────────
+async function openReader(bookId) {
+    const book = books.find(b => b.id == bookId);
+    if (!book) return;
+
+    currentBookId = bookId;
+    document.getElementById('readerTitle').textContent = book.title;
+    document.getElementById('readerOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+
+    showPageLoading(true);
+
+    try {
+        pdfDoc = await pdfjsLib.getDocument({ url: book.data }).promise;
+        totalPages = pdfDoc.numPages;
+        document.getElementById('totalPagesDisplay').textContent = totalPages;
+        document.getElementById('pageInput').max = totalPages;
+        currentPage = book.lastPage || 1;
+        zoomScale = 1.0;
+        updateZoomLabel();
+        await renderPage(currentPage, null);
+    } catch(e) {
+        showToast('❌ Erro ao abrir PDF');
+        closeReader();
+    }
+}
+
+async function renderPage(num, direction) {
+    if (!pdfDoc) return;
+    showPageLoading(true);
+
+    const page = await pdfDoc.getPage(num);
+    const canvas = document.getElementById('pdfCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Viewport responsivo
+    const maxW = Math.min(window.innerWidth - 140, 760);
+    const maxH = window.innerHeight - 170;
+    const baseViewport = page.getViewport({ scale: 1 });
+    const scaleFit = Math.min(maxW / baseViewport.width, maxH / baseViewport.height);
+    const finalScale = scaleFit * zoomScale;
+    const viewport = page.getViewport({ scale: finalScale });
+
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+
+    await page.render({ canvasContext: ctx, viewport }).promise;
+
+    showPageLoading(false);
+    updateControls(num);
+
+    // Animação de virada
+    if (direction) {
+        const wrap = document.getElementById('pageWrap');
+        wrap.classList.remove('flip-next', 'flip-prev');
+        void wrap.offsetWidth; // reflow
+        wrap.classList.add(direction === 'next' ? 'flip-next' : 'flip-prev');
+        wrap.addEventListener('animationend', () => {
+            wrap.classList.remove('flip-next', 'flip-prev');
+            isAnimating = false;
+        }, { once: true });
+    } else {
+        isAnimating = false;
+    }
+
+    // Salva progresso
+    const book = books.find(b => b.id == currentBookId);
+    if (book) { book.lastPage = num; saveBooks(); }
+}
+
+function updateControls(num) {
+    document.getElementById('pageInput').value = num;
+    document.getElementById('btnFirst').disabled = num <= 1;
+    document.getElementById('btnPrev').disabled = num <= 1;
+    document.getElementById('navPrev').disabled = num <= 1;
+    document.getElementById('btnNext').disabled = num >= totalPages;
+    document.getElementById('btnLast').disabled = num >= totalPages;
+    document.getElementById('navNext').disabled = num >= totalPages;
+
+    const pct = totalPages > 1 ? ((num - 1) / (totalPages - 1)) * 100 : 100;
+    document.getElementById('progressBar').style.width = pct + '%';
+}
+
+async function changePage(delta) {
+    if (isAnimating) return;
+    const newPage = currentPage + delta;
+    if (newPage < 1 || newPage > totalPages) return;
+    isAnimating = true;
+    currentPage = newPage;
+    await renderPage(currentPage, delta > 0 ? 'next' : 'prev');
+}
+
+async function goToPage(n) {
+    if (!pdfDoc) return;
+    n = Math.max(1, Math.min(n, totalPages));
+    if (n === currentPage) return;
+    if (isNaN(n)) return;
+    const dir = n > currentPage ? 'next' : 'prev';
+    isAnimating = true;
+    currentPage = n;
+    await renderPage(currentPage, dir);
+}
+
+function changeZoom(delta) {
+    zoomScale = Math.max(0.5, Math.min(3.0, zoomScale + delta));
+    updateZoomLabel();
+    renderPage(currentPage, null);
+}
+function resetZoom() { zoomScale = 1.0; updateZoomLabel(); renderPage(currentPage, null); }
+function updateZoomLabel() {
+    document.getElementById('zoomLabel').textContent = Math.round(zoomScale * 100) + '%';
+}
+
+function showPageLoading(show) {
+    document.getElementById('pageLoading').classList.toggle('hidden', !show);
+}
+
+function closeReader() {
+    document.getElementById('readerOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+    pdfDoc = null; currentPage = 1; totalPages = 0;
+    renderLibrary(); // Atualiza o card com o último marcador
+}
+
+function deleteBook(id) {
+    if (!confirm('Excluir este livro da biblioteca?')) return;
+    books = books.filter(b => b.id != id);
+    saveBooks(); renderLibrary(); updateStats();
+}
+
+// ─── Keyboard navigation ──────────────────────────────────────────
+document.addEventListener('keydown', (e) => {
+    const open = document.getElementById('readerOverlay').classList.contains('open');
+    if (!open) return;
+    if (e.key === 'Escape') closeReader();
+    else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') changePage(1);
+    else if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   changePage(-1);
+    else if (e.key === 'Home') goToPage(1);
+    else if (e.key === 'End')  goToPage(totalPages);
+    else if (e.key === '+')    changeZoom(0.15);
+    else if (e.key === '-')    changeZoom(-0.15);
+});
+
+// ─── Touch/Swipe ──────────────────────────────────────────────────
+let touchStartX = 0;
+document.getElementById('readerOverlay').addEventListener('touchstart', (e) => {
+    touchStartX = e.touches[0].clientX;
+}, { passive: true });
+document.getElementById('readerOverlay').addEventListener('touchend', (e) => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 50) changePage(dx < 0 ? 1 : -1);
+}, { passive: true });
+
+// ─── Helpers ──────────────────────────────────────────────────────
+function formatFileSize(bytes) {
+    if (!bytes) return '0 B';
+    const k = 1024, s = ['B','KB','MB','GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return (bytes / Math.pow(k, i)).toFixed(1) + ' ' + s[i];
+}
+
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+}
+</script>
+</body>
+</html>
