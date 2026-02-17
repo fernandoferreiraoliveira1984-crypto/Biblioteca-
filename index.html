@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minha Biblioteca PDF</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; }
+
+        header { text-align: center; color: white; margin-bottom: 30px; }
+        h1 { font-size: 2.5em; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+
+        /* ── DRIVE ── */
+        .drive-section {
+            background: white; padding: 20px 30px; border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); margin-bottom: 20px;
+            display: flex; align-items: center; justify-content: space-between;
+            flex-wrap: wrap; gap: 14px;
+        }
+        .drive-info { display: flex; align-items: center; gap: 12px; }
+        .drive-icon {
+            width: 44px; height: 44px; border-radius: 50%;
+            background: linear-gradient(135deg, #4285f4, #34a853);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3em; flex-shrink: 0;
+        }
+        .drive-text h3 { font-size: 1em; color: #333; }
+        .drive-text p { font-size: 0.82em; color: #888; margin-top: 2px; }
+        .drive-btn {
+            background: linear-gradient(135deg, #4285f4, #1a73e8);
+            color: white; border: none; padding: 12px 24px;
+            border-radius: 25px; font-family: 'Segoe UI', sans-serif;
+            font-size: 0.95em; font-weight: 600; cursor: pointer;
+            transition: all 0.3s; display: flex; align-items: center; gap: 8px;
+            box-shadow: 0 4px 15px rgba(66,133,244,0.4); white-space: nowrap;
+        }
+        .drive-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(66,133,244,0.6); }
+        .drive-btn.connected { background: linear-gradient(135deg, #34a853, #1e8e3e); box-shadow: 0 4px 15px rgba(52,168,83,0.4); }
+        .drive-status { display: flex; align-items: center; gap: 8px; font-size: 0.88em; color: #34a853; font-weight: 500; }
+        .drive-status-dot { width: 9px; height: 9px; border-radius: 50%; background: #34a853; animation: blink 2s infinite; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.35} }
+
+        /* ── UPLOAD ── */
+        .upload-section {
+            background: white; padding: 30px; border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); margin-bottom: 30px; text-align: center;
+        }
+        .upload-btn {
+            background: #667eea; color: white; padding: 15px 40px;
+            border: none; border-radius: 25px; font-size: 1.1em; cursor: pointer;
+            transition: all 0.3s; box-shadow: 0 4px 15px rgba(102,126,234,0.4);
+        }
+        .upload-btn:hover { background: #5568d3; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102,126,234,0.6); }
+        #fileInput { display: none; }
+
+        /* ── STATS ── */
+        .stats {
+            background: white; padding: 20px; border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2); margin-bottom: 30px; text-align: center;
+        }
+        .stats-content { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 20px; }
+        .stat-item { flex: 1; min-width: 120px; }
+        .stat-number { font-size: 2em; font-weight: bold; color: #667eea; }
+        .stat-label { color: #666; margin-top: 5px; }
+
+        /* ── LIBRARY ── */
+        .library { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; margin-bottom: 30px; }
+
+        .book-card {
+            background: white; border-radius: 15px; padding: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            transition: transform 0.3s, box-shadow 0.3s; cursor: pointer;
+        }
+        .book-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+
+        .book-icon {
+            width: 100%; height: 150px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 10px; display: flex; align-items: center;
+            justify-content: center; font-size: 4em; color: white; margin-bottom: 15px;
+        }
+        .book-title { font-size: 1.1em; font-weight: bold; color: #333; margin-bottom: 10px; word-wrap: break-word; }
+        .book-info { font-size: 0.9em; color: #666; margin-bottom: 12px; line-height: 1.7; }
+
+        /* Barra de progresso por livro */
+        .book-progress-wrap { margin-bottom: 15px; }
+        .book-progress-label {
+            display: flex; justify-content: space-between;
+            font-size: 0.8em; color: #888; margin-bottom: 5px;
+        }
+        .book-progress-label span:last-child { color: #667eea; font-weight: 600; }
+        .book-progress-bar-bg { height: 6px; background: #eee; border-radius: 10px; overflow: hidden; }
+        .book-progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 10px; transition: width 0.6s ease;
+        }
+
+        .book-actions { display: flex; gap: 10px; }
+        .btn { flex: 1; padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9em; transition: all 0.3s; }
+        .btn-read { background: #4CAF50; color: white; }
+        .btn-read:hover { background: #45a049; }
+        .btn-delete { background: #f44336; color: white; }
+        .btn-delete:hover { background: #da190b; }
+
+        /* ── EMPTY STATE ── */
+        .empty-state {
+            text-align: center; padding: 60px 20px; background: white;
+            border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+        .empty-state h2 { color: #667eea; margin-bottom: 15px; }
+        .empty-state p { color: #666; font-size: 1.1em; }
+
+        /* ── BOTÃO FLUTUANTE ── */
+        .import-btn {
+            position: fixed; bottom: 30px; right: 30px;
+            width: 70px; height: 70px;
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
+            border: none; border-radius: 50%;
+            box-shadow: 0 8px 25px rgba(255,107,107,0.5);
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: all 0.3s ease; z-index: 999; animation: pulse 2s infinite;
+        }
+        .import-btn:hover { transform: scale(1.1) rotate(5deg); box-shadow: 0 12px 35px rgba(255,107,107,0.7); }
+        .import-btn:active { transform: scale(0.95); }
+        .fishing-icon { width: 40px; height: 40px; fill: white; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); }
+        @keyframes pulse {
+            0%,100%{box-shadow:0 8px 25px rgba(255,107,107,0.5)}
+            50%{box-shadow:0 8px 35px rgba(255,107,107,0.8)}
+        }
+        .import-btn::before {
+            content: 'Importar PDFs'; position: absolute; right: 80px;
+            background: rgba(0,0,0,0.8); color: white; padding: 8px 15px;
+            border-radius: 8px; white-space: nowrap; opacity: 0;
+            pointer-events: none; transition: opacity 0.3s; font-size: 0.9em;
+        }
+        .import-btn:hover::before { opacity: 1; }
+
+        /* ═══════════════════════════════════════════
+           LEITOR PDF COM VIRADA DE PÁGINA ANIMADA
+        ═══════════════════════════════════════════ */
+        .reader-modal {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.97); z-index: 1000; flex-direction: column;
+        }
+        .reader-modal.open { display: flex; }
+
+        .reader-header {
+            background: #333; color: white; padding: 14px 20px;
+            display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
+        }
+        .reader-header-left { display: flex; align-items: center; gap: 14px; }
+        .reader-header h3 { font-size: 1em; max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .reader-progress-text { font-size: 0.82em; color: #aaa; white-space: nowrap; }
+
+        .close-btn {
+            background: #f44336; color: white; border: none; padding: 10px 20px;
+            border-radius: 5px; cursor: pointer; font-size: 1em; transition: background 0.2s;
+        }
+        .close-btn:hover { background: #da190b; }
+
+        /* Barra de progresso no topo do leitor */
+        .reading-progress { height: 4px; background: rgba(255,255,255,0.1); flex-shrink: 0; }
+        .reading-progress-bar {
+            height: 100%; background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.35s ease; border-radius: 0 2px 2px 0;
+        }
+
+        /* Área de leitura */
+        .reader-body {
+            flex: 1; display: flex; align-items: center; justify-content: center;
+            position: relative; overflow: hidden; padding: 16px 60px;
+        }
+        .page-stage {
+            position: relative; display: flex; align-items: center;
+            justify-content: center; width: 100%; height: 100%;
+        }
+        .page-container {
+            position: relative; perspective: 1200px;
+            display: flex; align-items: center; justify-content: center;
+            max-width: 740px; width: 100%;
+        }
+        .page-wrap { position: relative; transform-style: preserve-3d; will-change: transform; }
+
+        /* ANIMAÇÃO DE VIRADA — 0.35s */
+        .page-wrap.flip-next { animation: flipNext 0.35s cubic-bezier(0.4,0,0.2,1) forwards; }
+        .page-wrap.flip-prev { animation: flipPrev 0.35s cubic-bezier(0.4,0,0.2,1) forwards; }
+        @keyframes flipNext {
+            0%   { transform: rotateY(0deg) scaleX(1); opacity: 1; }
+            45%  { transform: rotateY(-60deg) scaleX(0.9); opacity: 0.4; }
+            75%  { transform: rotateY(-88deg) scaleX(0.85); opacity: 0.05; }
+            100% { transform: rotateY(0deg) scaleX(1); opacity: 1; }
+        }
+        @keyframes flipPrev {
+            0%   { transform: rotateY(0deg) scaleX(1); opacity: 1; }
+            45%  { transform: rotateY(60deg) scaleX(0.9); opacity: 0.4; }
+            75%  { transform: rotateY(88deg) scaleX(0.85); opacity: 0.05; }
+            100% { transform: rotateY(0deg) scaleX(1); opacity: 1; }
+        }
+
+        #pdfCanvas {
+            display: block; max-width: 100%; max-height: calc(100vh - 158px);
+            border-radius: 3px; box-shadow: 0 8px 50px rgba(0,0,0,0.85);
+        }
+        .page-glare {
+            position: absolute; top: 0; right: 0; bottom: 0; width: 35px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04));
+            pointer-events: none; border-radius: 0 3px 3px 0;
+        }
+        .page-corner {
+            position: absolute; bottom: 5px; right: 5px; width: 18px; height: 18px;
+            background: linear-gradient(135deg, transparent 50%, rgba(102,126,234,0.3) 50%);
+            pointer-events: none;
+        }
+
+        /* Botões laterais de navegação */
+        .nav-btn {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            width: 48px; height: 48px;
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 50%; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s; z-index: 10; color: white; font-size: 1.5em;
+        }
+        .nav-btn:hover:not(:disabled) { background: rgba(255,255,255,0.25); transform: translateY(-50%) scale(1.1); }
+        .nav-btn:disabled { opacity: 0.18; cursor: not-allowed; }
+        .nav-prev { left: 0; }
+        .nav-next { right: 0; }
+
+        /* Loading */
+        .page-loading {
+            position: absolute; inset: 0; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 12px; z-index: 5; pointer-events: none;
+        }
+        .page-loading.hidden { display: none; }
+        .loader-ring {
+            width: 44px; height: 44px;
+            border: 3px solid rgba(255,255,255,0.12);
+            border-top-color: #667eea; border-radius: 50%; animation: spin 0.7s linear infinite;
+        }
+        .loader-text { color: #aaa; font-size: 0.85em; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Footer do leitor */
+        .reader-footer {
+            background: #222; border-top: 1px solid rgba(255,255,255,0.1);
+            padding: 12px 20px; display: flex; align-items: center;
+            justify-content: center; gap: 18px; flex-shrink: 0; flex-wrap: wrap;
+        }
+        .page-controls { display: flex; align-items: center; gap: 10px; }
+        .ctrl-btn {
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+            color: white; width: 38px; height: 38px; border-radius: 8px; cursor: pointer;
+            font-size: 1em; display: flex; align-items: center; justify-content: center;
+            transition: all 0.18s; font-family: 'Segoe UI', sans-serif;
+        }
+        .ctrl-btn:hover:not(:disabled) { background: rgba(255,255,255,0.2); }
+        .ctrl-btn:disabled { opacity: 0.2; cursor: not-allowed; }
+        .page-indicator { display: flex; align-items: center; gap: 8px; }
+        .page-input {
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);
+            color: white; text-align: center; width: 54px; height: 36px;
+            border-radius: 8px; font-size: 1em; outline: none; transition: border 0.18s;
+        }
+        .page-input:focus { border-color: #667eea; }
+        .page-total { color: #aaa; font-size: 0.9em; white-space: nowrap; }
+        .zoom-controls { display: flex; align-items: center; gap: 8px; }
+        .zoom-label { color: #aaa; font-size: 0.82em; min-width: 42px; text-align: center; }
+        .keyboard-hint { color: #666; font-size: 0.75em; }
+        .kbd { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-radius: 4px; padding: 1px 6px; font-size: 0.85em; }
+
+        /* Toast */
+        .toast {
+            position: fixed; top: 22px; left: 50%;
+            transform: translateX(-50%) translateY(-80px);
+            background: #333; border: 1px solid #667eea; color: white;
+            padding: 12px 24px; border-radius: 10px; font-size: 0.9em;
+            transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+            z-index: 9999; pointer-events: none; box-shadow: 0 8px 28px rgba(0,0,0,0.5);
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+
+        /* ── DRIVE MODAL ── */
+        .drive-modal {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.85); z-index: 3000;
+            align-items: center; justify-content: center; padding: 20px;
+        }
+        .drive-modal.open { display: flex; }
+        .drive-modal-box {
+            background: white; border-radius: 20px; padding: 32px;
+            max-width: 480px; width: 100%; text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4); max-height: 90vh; overflow-y: auto;
+        }
+        .drive-modal-box h2 { color: #667eea; margin-bottom: 10px; font-size: 1.4em; }
+        .drive-modal-box p { color: #666; margin-bottom: 18px; line-height: 1.6; font-size: 0.95em; }
+        .drive-modal-cancel {
+            background: #eee; color: #666; border: none; padding: 10px 22px;
+            border-radius: 25px; cursor: pointer; font-family: 'Segoe UI', sans-serif;
+            font-size: 0.9em; transition: all 0.2s; margin-top: 10px;
+        }
+        .drive-modal-cancel:hover { background: #ddd; }
+
+        .drive-file-list { max-height: 340px; overflow-y: auto; text-align: left; margin-bottom: 4px; }
+        .drive-file-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 11px 14px; border-radius: 10px; cursor: pointer;
+            transition: background 0.2s; border-bottom: 1px solid #f0f0f0;
+        }
+        .drive-file-item:hover:not(.already) { background: #f5f0ff; }
+        .drive-file-item.already { opacity: 0.5; cursor: default; }
+        .drive-file-icon { font-size: 1.4em; flex-shrink: 0; }
+        .drive-file-name { color: #333; font-size: 0.9em; flex: 1; word-break: break-word; }
+        .drive-file-size { color: #999; font-size: 0.75em; white-space: nowrap; }
+        .drive-file-check {
+            width: 22px; height: 22px; border-radius: 50%;
+            border: 2px solid #ccc; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.75em; transition: all 0.2s; color: transparent;
+        }
+        .drive-file-item.selected .drive-file-check { background: #667eea; border-color: #667eea; color: white; }
+
+        .drive-import-bar {
+            display: flex; gap: 10px; align-items: center;
+            padding: 12px 0 0; flex-wrap: wrap;
+        }
+        .drive-select-all {
+            font-size: 0.85em; color: #667eea; cursor: pointer;
+            background: none; border: none; font-family: 'Segoe UI', sans-serif; text-decoration: underline;
+        }
+        .drive-import-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white; border: none; padding: 10px 22px;
+            border-radius: 20px; cursor: pointer; font-family: 'Segoe UI', sans-serif;
+            font-weight: 600; font-size: 0.9em; transition: all 0.2s; margin-left: auto;
+            box-shadow: 0 4px 15px rgba(102,126,234,0.4);
+        }
+        .drive-import-btn:hover:not(:disabled) { transform: translateY(-1px); }
+        .drive-import-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        @media (max-width: 768px) {
+            .library { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+            h1 { font-size: 1.8em; }
+            .reader-body { padding: 12px 46px; }
+            .nav-btn { width: 40px; height: 40px; font-size: 1.2em; }
+            .reader-footer { padding: 10px 12px; gap: 10px; }
+            .keyboard-hint { display: none; }
+            .import-btn { width: 60px; height: 60px; bottom: 20px; right: 20px; }
+            .fishing-icon { width: 35px; height: 35px; }
+            .import-btn::before { display: none; }
+            .drive-section { flex-direction: column; align-items: flex-start; }
+        }
+        @media (max-width: 480px) {
+            .library { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📚 Minha Biblioteca PDF</h1>
+            <p>Organize e leia seus PDFs favoritos</p>
+        </header>
+
+        <!-- Google Drive -->
+        <div class="drive-section">
+            <div class="drive-info">
+                <div class="drive-icon">☁️</div>
+                <div class="drive-text">
+                    <h3>Google Drive</h3>
+                    <p id="driveStatusText">Conecte para importar seus PDFs automaticamente</p>
+                </div>
+            </div>
+            <div id="driveActions">
+                <button class="drive-btn" onclick="connectDrive()">🔗 Conectar ao Drive</button>
+            </div>
+        </div>
+
+        <!-- Upload local -->
+        <div class="upload-section">
+            <h2 style="margin-bottom:20px;color:#333;">Adicionar PDFs à Biblioteca</h2>
+            <input type="file" id="fileInput" accept="application/pdf" multiple>
+            <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                📁 Selecionar PDFs
+            </button>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats" id="stats">
+            <div class="stats-content">
+                <div class="stat-item">
+                    <div class="stat-number" id="totalBooks">0</div>
+                    <div class="stat-label">Livros na Biblioteca</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="totalPages">0</div>
+                    <div class="stat-label">Total de Páginas</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="totalRead">0%</div>
+                    <div class="stat-label">Lido (média)</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="library" id="library"></div>
+
+        <div class="empty-state" id="emptyState">
+            <h2>📖 Sua biblioteca está vazia</h2>
+            <p>Conecte ao Drive ou adicione PDFs para começar a ler!</p>
+        </div>
+    </div>
+
+    <!-- Botão flutuante -->
+    <button class="import-btn" onclick="importAllPDFs()" title="Importar todos os PDFs do dispositivo">
+        <svg class="fishing-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 2 L21 2 L18 10 L16 10 L15 14 L13 14 L12 18 L11 18 L10 22"
+                  stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+            <line x1="10" y1="22" x2="8" y2="24" stroke="white" stroke-width="1" stroke-dasharray="2,1"/>
+            <path d="M8 24 C 8 23 7 23 7 24 C 7 25 8 25 8 24" stroke="white" stroke-width="1.2" fill="none"/>
+            <circle cx="16" cy="8" r="1.5" fill="white"/>
+            <rect x="19" y="1" width="3" height="3" rx="0.5" fill="white"/>
+        </svg>
+    </button>
+
+    <!-- ══ LEITOR ══ -->
+    <div class="reader-modal" id="readerModal">
+        <div class="reader-header">
+            <div class="reader-header-left">
+                <h3 id="readerTitle">Leitor PDF</h3>
+                <span class="reader-progress-text" id="readerProgressText"></span>
+            </div>
+            <button class="close-btn" onclick="closeReader()">✕ Fechar</button>
+        </div>
+
+        <div class="reading-progress">
+            <div class="reading-progress-bar" id="progressBar" style="width:0%"></div>
+        </div>
+
+        <div class="reader-body">
+            <button class="nav-btn nav-prev" id="navPrev" onclick="changePage(-1)">‹</button>
+            <div class="page-stage">
+                <div class="page-container">
+                    <div class="page-wrap" id="pageWrap">
+                        <canvas id="pdfCanvas"></canvas>
+                        <div class="page-glare"></div>
+                        <div class="page-corner"></div>
+                    </div>
+                    <div class="page-loading" id="pageLoading">
+                        <div class="loader-ring"></div>
+                        <div class="loader-text">Carregando página...</div>
+                    </div>
+                </div>
+            </div>
+            <button class="nav-btn nav-next" id="navNext" onclick="changePage(1)">›</button>
+        </div>
+
+        <div class="reader-footer">
+            <div class="page-controls">
+                <button class="ctrl-btn" id="btnFirst" onclick="goToPage(1)" title="Primeira página">⟪</button>
+                <button class="ctrl-btn" id="btnPrev" onclick="changePage(-1)" title="Anterior">‹</button>
+                <div class="page-indicator">
+                    <input type="number" class="page-input" id="pageInput" min="1" value="1"
+                        onchange="goToPage(parseInt(this.value))"
+                        onkeydown="if(event.key==='Enter')goToPage(parseInt(this.value))">
+                    <span class="page-total">/ <span id="totalPagesDisplay">—</span></span>
+                </div>
+                <button class="ctrl-btn" id="btnNext" onclick="changePage(1)" title="Próxima">›</button>
+                <button class="ctrl-btn" id="btnLast" onclick="goToPage(totalPages)" title="Última">⟫</button>
+            </div>
+            <div class="zoom-controls">
+                <button class="ctrl-btn" onclick="changeZoom(-0.15)">−</button>
+                <span class="zoom-label" id="zoomLabel">100%</span>
+                <button class="ctrl-btn" onclick="changeZoom(0.15)">+</button>
+                <button class="ctrl-btn" onclick="resetZoom()" style="font-size:0.68em;width:46px;">Reset</button>
+            </div>
+            <div class="keyboard-hint">
+                <span class="kbd">←</span><span class="kbd">→</span> navegar &nbsp;|&nbsp;
+                <span class="kbd">Esc</span> fechar
+            </div>
+        </div>
+    </div>
+
+    <!-- Drive Modal -->
+    <div class="drive-modal" id="driveModal">
+        <div class="drive-modal-box">
+            <div id="driveModalContent"></div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        // ─── Estado ───────────────────────────────────────────────
+        let books = JSON.parse(localStorage.getItem('pdfBooks_v4')) || [];
+        let pdfDoc = null, currentPage = 1, totalPages = 0;
+        let zoomScale = 1.0, isAnimating = false, currentBookId = null;
+        let driveFiles = [], driveSelectedIds = new Set();
+        let driveToken = localStorage.getItem('driveToken') || null;
+
+        // ─── Init ─────────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', function() {
+            renderLibrary();
+            updateStats();
+            if (driveToken) checkDriveToken();
+            // Captura token OAuth do redirect
+            const hash = window.location.hash;
+            if (hash.includes('access_token')) {
+                const params = new URLSearchParams(hash.substring(1));
+                driveToken = params.get('access_token');
+                localStorage.setItem('driveToken', driveToken);
+                window.history.replaceState(null, '', window.location.pathname);
+                setDriveConnected();
+                showToast('✅ Drive conectado com sucesso!');
+                setTimeout(() => openDriveFilePicker(), 800);
+            }
+        });
+
+        // ─── GOOGLE DRIVE ─────────────────────────────────────────
+        const DRIVE_CLIENT_ID = '608941138256-2qv4sodegvlsn3j96q08u9qfcl1k0qin.apps.googleusercontent.com';
+
+        function connectDrive() {
+            if (driveToken) { openDriveFilePicker(); return; }
+            const redirect = encodeURIComponent(window.location.href.split('#')[0]);
+            const url = 'https://accounts.google.com/o/oauth2/v2/auth' +
+                '?client_id=' + DRIVE_CLIENT_ID +
+                '&redirect_uri=' + redirect +
+                '&response_type=token' +
+                '&scope=' + encodeURIComponent('https://www.googleapis.com/auth/drive.readonly') +
+                '&include_granted_scopes=true';
+            window.location.href = url;
+        }
+
+        async function checkDriveToken() {
+            try {
+                const r = await fetch('https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=' + driveToken);
+                const d = await r.json();
+                if (d.error) { driveToken = null; localStorage.removeItem('driveToken'); return; }
+                setDriveConnected();
+            } catch(e) { driveToken = null; localStorage.removeItem('driveToken'); }
+        }
+
+        function setDriveConnected() {
+            document.getElementById('driveStatusText').textContent = 'Conectado! Toque para ver seus PDFs';
+            document.getElementById('driveActions').innerHTML = `
+                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                    <div class="drive-status">
+                        <div class="drive-status-dot"></div> Conectado
+                    </div>
+                    <button class="drive-btn connected" onclick="openDriveFilePicker()">☁️ Ver PDFs do Drive</button>
+                    <button onclick="disconnectDrive()" style="background:none;border:none;color:#999;cursor:pointer;font-size:0.82em;text-decoration:underline;">Desconectar</button>
+                </div>`;
+        }
+
+        function disconnectDrive() {
+            driveToken = null; localStorage.removeItem('driveToken');
+            document.getElementById('driveStatusText').textContent = 'Conecte para importar seus PDFs automaticamente';
+            document.getElementById('driveActions').innerHTML =
+                '<button class="drive-btn" onclick="connectDrive()">🔗 Conectar ao Drive</button>';
+            showToast('Drive desconectado');
+        }
+
+        async function openDriveFilePicker() {
+            if (!driveToken) { connectDrive(); return; }
+            showDriveModal('<h2>☁️ Google Drive</h2><p>Buscando seus PDFs...</p><div style="display:flex;justify-content:center;margin-top:16px;"><div class="loader-ring" style="border-top-color:#667eea;"></div></div>');
+            try {
+                const r = await fetch(
+                    "https://www.googleapis.com/drive/v3/files?q=mimeType%3D'application%2Fpdf'&fields=files(id,name,size)&pageSize=100",
+                    { headers: { Authorization: 'Bearer ' + driveToken } }
+                );
+                if (r.status === 401) {
+                    driveToken = null; localStorage.removeItem('driveToken'); closeDriveModal();
+                    document.getElementById('driveActions').innerHTML =
+                        '<button class="drive-btn" onclick="connectDrive()">🔗 Reconectar ao Drive</button>';
+                    showToast('⚠️ Sessão expirada. Reconecte ao Drive.');
+                    return;
+                }
+                const data = await r.json();
+                driveFiles = data.files || [];
+                driveSelectedIds = new Set();
+                if (!driveFiles.length) {
+                    showDriveModal('<h2>☁️ Google Drive</h2><p>Nenhum PDF encontrado no seu Drive.</p><button class="drive-modal-cancel" onclick="closeDriveModal()">Fechar</button>');
+                    return;
+                }
+                renderDriveFileList();
+            } catch(e) { closeDriveModal(); showToast('❌ Erro ao acessar o Drive.'); }
+        }
+
+        function renderDriveFileList() {
+            const alreadyIds = new Set(books.filter(b => b.driveId).map(b => b.driveId));
+            const html = `
+                <h2>☁️ Google Drive</h2>
+                <p>Selecione os PDFs para importar</p>
+                <div class="drive-file-list">
+                    ${driveFiles.map(f => {
+                        const already = alreadyIds.has(f.id);
+                        return `<div class="drive-file-item${already ? ' already' : ''}" data-id="${f.id}" onclick="${already ? '' : 'toggleDriveFile(this)'}">
+                            <div class="drive-file-icon">📄</div>
+                            <div class="drive-file-name">${f.name.replace('.pdf','')}${already ? ' <span style="color:#34a853;font-size:0.75em;">✓ já importado</span>' : ''}</div>
+                            <div class="drive-file-size">${f.size ? formatFileSize(parseInt(f.size)) : ''}</div>
+                            ${already ? '' : '<div class="drive-file-check">✓</div>'}
+                        </div>`;
+                    }).join('')}
+                </div>
+                <div class="drive-import-bar">
+                    <button class="drive-select-all" onclick="selectAllDrive()">Selecionar todos</button>
+                    <button class="drive-import-btn" id="driveImportBtn" onclick="importFromDrive()" disabled>Importar selecionados</button>
+                </div>
+                <button class="drive-modal-cancel" onclick="closeDriveModal()">Fechar</button>`;
+            showDriveModal(html);
+        }
+
+        function toggleDriveFile(el) {
+            const id = el.dataset.id;
+            if (driveSelectedIds.has(id)) { driveSelectedIds.delete(id); el.classList.remove('selected'); }
+            else { driveSelectedIds.add(id); el.classList.add('selected'); }
+            const btn = document.getElementById('driveImportBtn');
+            btn.disabled = driveSelectedIds.size === 0;
+            btn.textContent = driveSelectedIds.size > 0 ? `Importar ${driveSelectedIds.size} PDF(s)` : 'Importar selecionados';
+        }
+
+        function selectAllDrive() {
+            document.querySelectorAll('.drive-file-item:not(.already)').forEach(el => {
+                driveSelectedIds.add(el.dataset.id); el.classList.add('selected');
+            });
+            const btn = document.getElementById('driveImportBtn');
+            if (btn) { btn.disabled = driveSelectedIds.size === 0; btn.textContent = driveSelectedIds.size > 0 ? `Importar ${driveSelectedIds.size} PDF(s)` : 'Importar selecionados'; }
+        }
+
+        async function importFromDrive() {
+            if (!driveSelectedIds.size) return;
+            const toImport = driveFiles.filter(f => driveSelectedIds.has(f.id));
+            let count = 0;
+            for (let i = 0; i < toImport.length; i++) {
+                const file = toImport[i];
+                try {
+                    showDriveModal(`<h2>☁️ Importando...</h2><p>${file.name}</p><p style="color:#999;font-size:0.85em;">${i+1} de ${toImport.length}</p><div style="display:flex;justify-content:center;margin-top:16px;"><div class="loader-ring" style="border-top-color:#667eea;"></div></div>`);
+                    const r = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`, { headers: { Authorization: 'Bearer ' + driveToken } });
+                    const blob = await r.blob();
+                    const base64 = await blobToBase64(blob);
+                    let pageCount = 0;
+                    try { const pdf = await pdfjsLib.getDocument({url: base64}).promise; pageCount = pdf.numPages; } catch(e) {}
+                    books.push({
+                        id: Date.now() + Math.random(), driveId: file.id,
+                        title: file.name.replace('.pdf',''), fileName: file.name,
+                        size: file.size ? formatFileSize(parseInt(file.size)) : '?',
+                        pages: pageCount, addedDate: new Date().toLocaleDateString('pt-BR'),
+                        data: base64, lastPage: 1, progress: 0
+                    });
+                    count++;
+                } catch(e) { console.error('Erro importando', file.name); }
+            }
+            saveBooks(); renderLibrary(); updateStats();
+            closeDriveModal();
+            showToast(`✅ ${count} PDF(s) importado(s) do Drive!`);
+        }
+
+        function blobToBase64(blob) {
+            return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(blob); });
+        }
+        function showDriveModal(html) { document.getElementById('driveModalContent').innerHTML = html; document.getElementById('driveModal').classList.add('open'); }
+        function closeDriveModal() { document.getElementById('driveModal').classList.remove('open'); }
+
+        // ─── Upload local ─────────────────────────────────────────
+        document.getElementById('fileInput').addEventListener('change', async function(e) {
+            for (let file of Array.from(e.target.files))
+                if (file.type === 'application/pdf') await processFile(file);
+            e.target.value = '';
+        });
+
+        async function processFile(file) {
+            const reader = new FileReader();
+            return new Promise((resolve) => {
+                reader.onload = async function(event) {
+                    let pageCount = 0;
+                    try {
+                        const pdf = await pdfjsLib.getDocument({data: event.target.result}).promise;
+                        pageCount = pdf.numPages;
+                    } catch(e) {}
+                    books.push({
+                        id: Date.now() + Math.random(),
+                        title: file.name.replace('.pdf', ''), fileName: file.name,
+                        size: formatFileSize(file.size), pages: pageCount,
+                        addedDate: new Date().toLocaleDateString('pt-BR'),
+                        data: event.target.result, lastPage: 1, progress: 0
+                    });
+                    saveBooks(); renderLibrary(); updateStats(); resolve();
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function importAllPDFs() {
+            const input = document.createElement('input');
+            input.type = 'file'; input.accept = 'application/pdf'; input.multiple = true;
+            input.onchange = async function(e) {
+                const files = Array.from(e.target.files);
+                if (!files.length) return;
+                const btn = document.querySelector('.import-btn');
+                const orig = btn.innerHTML;
+                btn.innerHTML = '<div style="color:white;font-size:11px;text-align:center;">...</div>';
+                btn.style.pointerEvents = 'none';
+                let count = 0;
+                for (let file of files) if (file.type === 'application/pdf') { await processFile(file); count++; }
+                btn.innerHTML = orig; btn.style.pointerEvents = 'auto';
+                showToast(count > 0 ? `✅ ${count} PDF(s) importado(s)!` : '❌ Nenhum PDF importado');
+            };
+            input.click();
+        }
+
+        // ─── Renderização ──────────────────────────────────────────
+        function renderLibrary() {
+            const library = document.getElementById('library');
+            const emptyState = document.getElementById('emptyState');
+            if (books.length === 0) { library.style.display = 'none'; emptyState.style.display = 'block'; return; }
+            library.style.display = 'grid'; emptyState.style.display = 'none';
+            library.innerHTML = books.map(book => {
+                const pct = book.pages > 1 ? Math.round(((book.lastPage||1) - 1) / (book.pages - 1) * 100) : (book.lastPage >= 1 ? 100 : 0);
+                return `
+                <div class="book-card" onclick="openReader('${book.id}')">
+                    <div class="book-icon">📄</div>
+                    <div class="book-title">${book.title}</div>
+                    <div class="book-info">
+                        📄 ${book.pages||'?'} páginas &nbsp;|&nbsp; 💾 ${book.size}<br>
+                        📅 ${book.addedDate}${book.driveId ? ' &nbsp;|&nbsp; ☁️ Drive' : ''}
+                    </div>
+                    <div class="book-progress-wrap">
+                        <div class="book-progress-label">
+                            <span>Progresso de leitura</span>
+                            <span>${book.pages ? pct+'%' : '—'} · pág ${book.lastPage||1}${book.pages ? ' de '+book.pages : ''}</span>
+                        </div>
+                        <div class="book-progress-bar-bg">
+                            <div class="book-progress-bar-fill" style="width:${pct}%"></div>
+                        </div>
+                    </div>
+                    <div class="book-actions">
+                        <button class="btn btn-read" onclick="event.stopPropagation();openReader('${book.id}')">📖 Ler</button>
+                        <button class="btn btn-delete" onclick="event.stopPropagation();deleteBook('${book.id}')">🗑️ Excluir</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function updateStats() {
+            const total = books.length;
+            const totalPgs = books.reduce((s, b) => s + (b.pages||0), 0);
+            const avgRead = total > 0
+                ? Math.round(books.reduce((s, b) => {
+                    const p = b.pages > 1 ? ((b.lastPage||1)-1)/(b.pages-1)*100 : 0;
+                    return s + p;
+                  }, 0) / total)
+                : 0;
+            document.getElementById('totalBooks').textContent = total;
+            document.getElementById('totalPages').textContent = totalPgs;
+            document.getElementById('totalRead').textContent = avgRead + '%';
+        }
+
+        function saveBooks() { localStorage.setItem('pdfBooks_v4', JSON.stringify(books)); }
+
+        // ─── Leitor ───────────────────────────────────────────────
+        async function openReader(bookId) {
+            const book = books.find(b => b.id == bookId);
+            if (!book) return;
+            currentBookId = bookId;
+            document.getElementById('readerTitle').textContent = book.title;
+            document.getElementById('readerModal').classList.add('open');
+            document.body.style.overflow = 'hidden';
+            showPageLoading(true);
+            try {
+                pdfDoc = await pdfjsLib.getDocument({url: book.data}).promise;
+                totalPages = pdfDoc.numPages;
+                document.getElementById('totalPagesDisplay').textContent = totalPages;
+                document.getElementById('pageInput').max = totalPages;
+                currentPage = book.lastPage || 1;
+                zoomScale = 1.0; updateZoomLabel();
+                await renderPage(currentPage, null);
+            } catch(e) { showToast('❌ Erro ao abrir PDF'); closeReader(); }
+        }
+
+        async function renderPage(num, direction) {
+            if (!pdfDoc) return;
+            showPageLoading(true);
+            const page = await pdfDoc.getPage(num);
+            const canvas = document.getElementById('pdfCanvas');
+            const ctx = canvas.getContext('2d');
+            const maxW = Math.min(window.innerWidth - 130, 740);
+            const maxH = window.innerHeight - 155;
+            const base = page.getViewport({scale: 1});
+            const fit = Math.min(maxW / base.width, maxH / base.height);
+            const viewport = page.getViewport({scale: fit * zoomScale});
+            canvas.width = viewport.width; canvas.height = viewport.height;
+            await page.render({canvasContext: ctx, viewport}).promise;
+            showPageLoading(false);
+            updateControls(num);
+
+            if (direction) {
+                const wrap = document.getElementById('pageWrap');
+                wrap.classList.remove('flip-next', 'flip-prev');
+                void wrap.offsetWidth;
+                wrap.classList.add(direction === 'next' ? 'flip-next' : 'flip-prev');
+                wrap.addEventListener('animationend', () => {
+                    wrap.classList.remove('flip-next', 'flip-prev');
+                    isAnimating = false;
+                }, {once: true});
+            } else { isAnimating = false; }
+
+            const book = books.find(b => b.id == currentBookId);
+            if (book) {
+                book.lastPage = num;
+                book.progress = totalPages > 1 ? Math.round((num-1)/(totalPages-1)*100) : 100;
+                saveBooks();
+            }
+            const pct = totalPages > 1 ? Math.round((num-1)/(totalPages-1)*100) : 100;
+            document.getElementById('readerProgressText').textContent = pct + '% lido';
+        }
+
+        function updateControls(num) {
+            document.getElementById('pageInput').value = num;
+            ['btnFirst','btnPrev','navPrev'].forEach(id => document.getElementById(id).disabled = num <= 1);
+            ['btnNext','btnLast','navNext'].forEach(id => document.getElementById(id).disabled = num >= totalPages);
+            const pct = totalPages > 1 ? ((num-1)/(totalPages-1))*100 : 100;
+            document.getElementById('progressBar').style.width = pct + '%';
+        }
+
+        async function changePage(delta) {
+            if (isAnimating) return;
+            const n = currentPage + delta;
+            if (n < 1 || n > totalPages) return;
+            isAnimating = true; currentPage = n;
+            await renderPage(currentPage, delta > 0 ? 'next' : 'prev');
+        }
+
+        async function goToPage(n) {
+            if (!pdfDoc) return;
+            n = Math.max(1, Math.min(n, totalPages));
+            if (n === currentPage || isNaN(n)) return;
+            isAnimating = true; currentPage = n;
+            await renderPage(currentPage, n > currentPage ? 'next' : 'prev');
+        }
+
+        function changeZoom(d) { zoomScale = Math.max(0.5, Math.min(3.0, zoomScale + d)); updateZoomLabel(); renderPage(currentPage, null); }
+        function resetZoom() { zoomScale = 1.0; updateZoomLabel(); renderPage(currentPage, null); }
+        function updateZoomLabel() { document.getElementById('zoomLabel').textContent = Math.round(zoomScale*100) + '%'; }
+        function showPageLoading(show) { document.getElementById('pageLoading').classList.toggle('hidden', !show); }
+
+        function closeReader() {
+            document.getElementById('readerModal').classList.remove('open');
+            document.body.style.overflow = '';
+            pdfDoc = null; currentPage = 1; totalPages = 0;
+            renderLibrary(); updateStats();
+        }
+
+        function deleteBook(bookId) {
+            if (confirm('Tem certeza que deseja excluir este livro da biblioteca?')) {
+                books = books.filter(b => b.id != bookId);
+                saveBooks(); renderLibrary(); updateStats();
+            }
+        }
+
+        // ─── Teclado ──────────────────────────────────────────────
+        document.addEventListener('keydown', function(e) {
+            if (!document.getElementById('readerModal').classList.contains('open')) return;
+            if (e.key === 'Escape') closeReader();
+            else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') changePage(1);
+            else if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   changePage(-1);
+            else if (e.key === 'Home') goToPage(1);
+            else if (e.key === 'End')  goToPage(totalPages);
+            else if (e.key === '+')    changeZoom(0.15);
+            else if (e.key === '-')    changeZoom(-0.15);
+        });
+
+        // ─── Swipe ────────────────────────────────────────────────
+        let touchStartX = 0;
+        document.getElementById('readerModal').addEventListener('touchstart', e => {
+            touchStartX = e.touches[0].clientX;
+        }, {passive: true});
+        document.getElementById('readerModal').addEventListener('touchend', e => {
+            const dx = e.changedTouches[0].clientX - touchStartX;
+            if (Math.abs(dx) > 50) changePage(dx < 0 ? 1 : -1);
+        }, {passive: true});
+
+        // ─── Helpers ──────────────────────────────────────────────
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024, sizes = ['Bytes','KB','MB','GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg; t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2800);
+        }
+    </script>
+</body>
+</html>
